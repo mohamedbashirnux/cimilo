@@ -1,26 +1,167 @@
 @import "tailwindcss";
 
+/* ── Design tokens ──────────────────────────────────────────────────────────
+   Dark-first. Values drawn from the validated data-viz palette so the warning
+   status colours and the sequential temperature ramp stay coherent. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --plane: #0b0d10; /* page background */
+  --surface-1: #14171c; /* cards */
+  --surface-2: #1b1f26; /* raised / hover */
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  --ink: #f4f6f8;
+  --ink-2: #b9c0c9;
+  --muted: #7c8590;
+
+  /* Somali-flag blue as the brand accent */
+  --brand: #4da3ff;
+  --brand-dim: #2c6bb3;
+
+  /* Status palette (fixed, never themed) */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+
+  /* Sequential blue ramp (temperature/precip charts) */
+  --seq-100: #cde2fb;
+  --seq-300: #6da7ec;
+  --seq-500: #256abf;
+
+  --grid: #262b31;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-plane: var(--plane);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-good: var(--good);
+  --color-warning: var(--warning);
+  --color-serious: var(--serious);
+  --color-critical: var(--critical);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  /* subtle sky glow behind everything */
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgba(77, 163, 255, 0.10), transparent 60%),
+    radial-gradient(80% 50% at 100% 0%, rgba(208, 59, 59, 0.05), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Tabular figures for anything that must align in columns */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+
+/* Severity halo pulse on map markers */
+@keyframes haloPulse {
+  0% { transform: scale(0.6); opacity: 0.55; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+.halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: haloPulse 2.6s ease-out infinite;
+}
+.halo.fast { animation-duration: 1.6s; }
+
+/* Rotating conic sweep used behind storm markers */
+@keyframes stormSpin {
+  to { transform: rotate(360deg); }
+}
+.storm-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: stormSpin 3.5s linear infinite;
+}
+
+/* Drifting wind streaks over the map */
+@keyframes windDrift {
+  0% { stroke-dashoffset: 0; opacity: 0; }
+  20% { opacity: 0.9; }
+  80% { opacity: 0.9; }
+  100% { stroke-dashoffset: -60; opacity: 0; }
+}
+.wind-streak {
+  animation: windDrift 3s linear infinite;
+}
+
+/* Falling rain ticks */
+@keyframes rainFall {
+  0% { transform: translateY(-6px); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(10px); opacity: 0; }
+}
+.rain-tick {
+  transform-box: fill-box;
+  animation: rainFall 1.1s linear infinite;
+}
+
+/* Storm/rain cell drifting with the wind (direction via --dx/--dy vars) */
+@keyframes cellDrift {
+  0% { transform: translate(0, 0); opacity: 0; }
+  15% { opacity: var(--peak, 0.7); }
+  85% { opacity: var(--peak, 0.7); }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+.storm-cell {
+  transform-box: fill-box;
+  animation: cellDrift var(--dur, 5s) linear infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .halo, .storm-spin, .wind-streak, .rain-tick, .skeleton::after, .storm-cell {
+    animation: none;
+  }
+  .halo { opacity: 0.25; }
+  .storm-cell { opacity: var(--peak, 0.6); }
+}
+
+/* Focus ring for keyboard users */
+:where(a, button):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
